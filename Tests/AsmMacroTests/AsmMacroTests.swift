@@ -22,7 +22,6 @@ final class AsmMacroTests: XCTestCase {
             func answer() -> Int
             """,
             expandedSource: """
-
               func answer() -> Int {
                 return 42
               }
@@ -46,7 +45,6 @@ final class AsmMacroTests: XCTestCase {
             func answer() -> Int
             """#,
             expandedSource: """
-
               func answer() -> Int {
                 let value = 40 + 2
                 return value
