@@ -1,8 +1,9 @@
 import AsmMacro
 
-let a = 17
-let b = 25
+@Asm("""
+let value = 40 + 2
+return value
+""")
+func answer() -> Int
 
-let (result, code) = #stringify(a + b)
-
-print("The value \(result) was produced by the code \"\(code)\"")
+print("The generated answer is \(answer())")

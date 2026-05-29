@@ -9,37 +9,75 @@ import XCTest
 import AsmMacroMacros
 
 let testMacros: [String: Macro.Type] = [
-    "stringify": StringifyMacro.self,
+    "Asm": AsmMacro.self,
 ]
 #endif
 
 final class AsmMacroTests: XCTestCase {
-    func testMacro() throws {
+    func testAsmMacroAddsFunctionBody() throws {
         #if canImport(AsmMacroMacros)
         assertMacroExpansion(
             """
-            #stringify(a + b)
+            @Asm("return 42")
+            func answer() -> Int
             """,
             expandedSource: """
-            (a + b, "a + b")
-            """,
-            macros: testMacros
+
+              func answer() -> Int {
+                return 42
+              }
+              """,
+            macros: testMacros,
+            indentationWidth: .spaces(2)
         )
         #else
         throw XCTSkip("macros are only supported when running tests for the host platform")
         #endif
     }
 
-    func testMacroWithStringLiteral() throws {
+    func testAsmMacroAddsMultilineFunctionBody() throws {
         #if canImport(AsmMacroMacros)
         assertMacroExpansion(
             #"""
-            #stringify("Hello, \(name)")
+            @Asm("""
+            let value = 40 + 2
+            return value
+            """)
+            func answer() -> Int
             """#,
-            expandedSource: #"""
-            ("Hello, \(name)", #""Hello, \(name)""#)
-            """#,
-            macros: testMacros
+            expandedSource: """
+
+              func answer() -> Int {
+                let value = 40 + 2
+                return value
+              }
+              """,
+            macros: testMacros,
+            indentationWidth: .spaces(2)
+        )
+        #else
+        throw XCTSkip("macros are only supported when running tests for the host platform")
+        #endif
+    }
+
+    func testAsmMacroAddsMethodBody() throws {
+        #if canImport(AsmMacroMacros)
+        assertMacroExpansion(
+            """
+            struct ALU {
+                @Asm("return lhs + rhs")
+                func add(_ lhs: Int, _ rhs: Int) -> Int
+            }
+            """,
+            expandedSource: """
+            struct ALU {
+                func add(_ lhs: Int, _ rhs: Int) -> Int {
+                  return lhs + rhs
+                }
+            }
+            """,
+            macros: testMacros,
+            indentationWidth: .spaces(2)
         )
         #else
         throw XCTSkip("macros are only supported when running tests for the host platform")

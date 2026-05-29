@@ -1,11 +1,10 @@
-// The Swift Programming Language
-// https://docs.swift.org/swift-book
-
-/// A macro that produces both a value and a string containing the
-/// source code that generated the value. For example,
+/// Attaches a generated body to a function.
 ///
-///     #stringify(x + y)
+/// The current foundation treats the string as Swift statements that should
+/// become the function body. The translation point is intentionally isolated in
+/// the macro implementation so an asm-like DSL parser can replace it later.
 ///
-/// produces a tuple `(x + y, "x + y")`.
-@freestanding(expression)
-public macro stringify<T>(_ value: T) -> (T, String) = #externalMacro(module: "AsmMacroMacros", type: "StringifyMacro")
+///     @Asm("return 42")
+///     func answer() -> Int
+@attached(body)
+public macro Asm(_ source: String) = #externalMacro(module: "AsmMacroMacros", type: "AsmMacro")
