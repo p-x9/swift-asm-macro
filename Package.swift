@@ -4,7 +4,7 @@ import PackageDescription
 import CompilerPluginSupport
 
 let package = Package(
-    name: "AsmMacro",
+    name: "swift-asm-macro",
     platforms: [
         .macOS(.v13),
         .iOS(.v16),
