@@ -107,6 +107,17 @@ struct AsmFunction {
             return nil
         }
 
+        guard arguments.architecture == .arm64 else {
+            if diagnose {
+                context.diagnose(
+                    AsmMacroDiagnostic
+                        .unsupportedArchitecture(arguments.architecture.rawValue)
+                        .diagnose(at: declaration)
+                )
+            }
+            return nil
+        }
+
         guard isTopLevel(context: context) else {
             if diagnose {
                 context.diagnose(AsmMacroDiagnostic.requiresTopLevelFunction.diagnose(at: declaration))

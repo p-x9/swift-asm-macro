@@ -24,31 +24,27 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/swiftlang/swift-syntax.git", from: "603.0.0-latest"),
+        .package(url: "https://github.com/swiftbin/swift-assembler.git", branch: "main"),
     ],
     targets: [
         .macro(
             name: "AsmMacroMacros",
             dependencies: [
                 .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
-                .product(name: "SwiftCompilerPlugin", package: "swift-syntax")
+                .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
+                .product(name: "Assembler", package: "swift-assembler"),
             ]
         ),
         .target(name: "AsmMacro", dependencies: ["AsmMacroMacros"]),
         .executableTarget(
             name: "AsmMacroClient",
-            dependencies: ["AsmMacro"],
-            swiftSettings: [
-                .unsafeFlags(["-disable-sandbox"])
-            ]
+            dependencies: ["AsmMacro"]
         ),
         .testTarget(
             name: "AsmMacroTests",
             dependencies: [
                 "AsmMacroMacros",
                 .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
-            ],
-            swiftSettings: [
-                .unsafeFlags(["-disable-sandbox"])
             ]
         ),
     ]

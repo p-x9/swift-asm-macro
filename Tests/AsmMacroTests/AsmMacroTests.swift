@@ -103,12 +103,8 @@ final class AsmMacroTests: XCTestCase {
         #endif
     }
 
-    func testAsmMacroExpandsX86_64Function() throws {
+    func testAsmMacroRejectsX86_64Function() throws {
         #if canImport(AsmMacroMacros)
-        let storageName = AsmStorageName.make(
-            functionName: "add"
-        )
-
         assertMacroExpansion(
             """
             @Asm(
@@ -122,34 +118,16 @@ final class AsmMacroTests: XCTestCase {
             func add(_ lhs: UInt64, _ rhs: UInt64) -> UInt64
             """,
             expandedSource: """
-              func add(_ lhs: UInt64, _ rhs: UInt64) -> UInt64 {
-                #if arch(x86_64)
-                typealias __AsmFn = @convention(c) (UInt64, UInt64) -> UInt64
-                let f = withUnsafePointer(to: &\(storageName)) {
-                    unsafeBitCast($0, to: __AsmFn.self)
-                }
-                return f(lhs, rhs)
-                #else
-                #error("@Asm function add was generated for x86_64.")
-                #endif
-              }
-
-              #if arch(x86_64)
-              @used
-              @section("__TEXT,__text")
-              nonisolated(unsafe) var \(storageName): (UInt8, UInt8, UInt8, UInt8, UInt8, UInt8, UInt8) = (
-                  0x48,
-                  0x89,
-                  0xf8,
-                  0x48,
-                  0x01,
-                  0xf0,
-                  0xc3
-              )
-              #else
-              #error("@Asm storage \(storageName) was generated for x86_64.")
-              #endif
+              func add(_ lhs: UInt64, _ rhs: UInt64) -> UInt64
               """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "`@Asm` does not currently support x86_64 assembly.",
+                    line: 1,
+                    column: 1,
+                    severity: .error
+                )
+            ],
             macros: testMacros,
             indentationWidth: .spaces(2)
         )
@@ -158,36 +136,17 @@ final class AsmMacroTests: XCTestCase {
         #endif
     }
 
-    func testParseEncodedBytes() throws {
+    func testAssemblerUsesSwiftAssemblerBackend() throws {
         #if canImport(AsmMacroMacros)
-        let output = """
-            add x0, x0, x1            ; encoding: [0x00,0x00,0x01,0x8b]
-            ret                       ; encoding: [0xc0,0x03,0x5f,0xd6]
-        """
+        let code = try AsmAssembler().assemble(
+            """
+            add x0, x0, x1
+            ret
+            """,
+            architecture: .arm64
+        )
 
-        let bytes = try AsmAssembler.parseEncodedBytes(from: output)
-
-        XCTAssertEqual(bytes, [
-            0x00, 0x00, 0x01, 0x8b,
-            0xc0, 0x03, 0x5f, 0xd6
-        ])
-        #else
-        throw XCTSkip("macros are only supported when running tests for the host platform")
-        #endif
-    }
-
-    func testParseObjdumpBytes() throws {
-        #if canImport(AsmMacroMacros)
-        let output = """
-
-        /private/tmp/asm_test.o:\tfile format mach-o arm64
-        Contents of section __TEXT,__text:
-         0000 0000018b c0035fd6                    ......_.
-        """
-
-        let bytes = try AsmAssembler.parseObjdumpBytes(from: output)
-
-        XCTAssertEqual(bytes, [
+        XCTAssertEqual(code.bytes, [
             0x00, 0x00, 0x01, 0x8b,
             0xc0, 0x03, 0x5f, 0xd6
         ])

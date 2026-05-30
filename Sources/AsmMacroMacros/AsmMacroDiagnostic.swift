@@ -22,6 +22,7 @@ public enum AsmMacroDiagnostic: Error {
     case unsupportedParameter(String)
     case unsupportedReturnType(String)
     case unnamedParameterIsNotSupported
+    case unsupportedArchitecture(String)
     case assemblerFailed(String)
     case invalidAssemblerOutput(String)
 }
@@ -57,6 +58,8 @@ extension AsmMacroDiagnostic: DiagnosticMessage {
             return "`@Asm` return type `\(type)` is not supported by v1 C ABI lowering."
         case .unnamedParameterIsNotSupported:
             return "`@Asm` does not support unnamed parameters."
+        case let .unsupportedArchitecture(architecture):
+            return "`@Asm` does not currently support \(architecture) assembly."
         case let .assemblerFailed(message):
             return message
         case let .invalidAssemblerOutput(message):
@@ -98,6 +101,8 @@ extension AsmMacroDiagnostic: DiagnosticMessage {
             return "unsupportedReturnType"
         case .unnamedParameterIsNotSupported:
             return "unnamedParameterIsNotSupported"
+        case .unsupportedArchitecture:
+            return "unsupportedArchitecture"
         case .assemblerFailed:
             return "assemblerFailed"
         case .invalidAssemblerOutput:

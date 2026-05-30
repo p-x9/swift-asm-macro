@@ -1,6 +1,15 @@
 {
-  "originHash" : "dd5cd94d4ea54027be05e6d6d519c8ce3af8ec2273dafec763eff5ad2d20d0e0",
+  "originHash" : "a62db182fa4281976cb0a6ee966dac9f2582e99c0ea3c175953ac266b65c1f65",
   "pins" : [
+    {
+      "identity" : "swift-assembler",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swiftbin/swift-assembler.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "11385ecff7527b3a35b27867308db93290479b91"
+      }
+    },
     {
       "identity" : "swift-syntax",
       "kind" : "remoteSourceControl",
