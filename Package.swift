@@ -6,11 +6,11 @@ import CompilerPluginSupport
 let package = Package(
     name: "AsmMacro",
     platforms: [
-        .macOS(.v10_15),
-        .iOS(.v13),
-        .tvOS(.v13),
-        .watchOS(.v6),
-        .macCatalyst(.v13)
+        .macOS(.v13),
+        .iOS(.v16),
+        .tvOS(.v16),
+        .watchOS(.v9),
+        .macCatalyst(.v16)
     ],
     products: [
         .library(
@@ -34,12 +34,21 @@ let package = Package(
             ]
         ),
         .target(name: "AsmMacro", dependencies: ["AsmMacroMacros"]),
-        .executableTarget(name: "AsmMacroClient", dependencies: ["AsmMacro"]),
+        .executableTarget(
+            name: "AsmMacroClient",
+            dependencies: ["AsmMacro"],
+            swiftSettings: [
+                .unsafeFlags(["-disable-sandbox"])
+            ]
+        ),
         .testTarget(
             name: "AsmMacroTests",
             dependencies: [
                 "AsmMacroMacros",
                 .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
+            ],
+            swiftSettings: [
+                .unsafeFlags(["-disable-sandbox"])
             ]
         ),
     ]

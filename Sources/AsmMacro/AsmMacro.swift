@@ -1,10 +1,21 @@
-/// Attaches a generated body to a function.
+public enum AsmArchitecture {
+    case arm64
+    case x86_64
+}
+
+/// Attaches machine code assembled from inline assembly to a C ABI-compatible function.
 ///
-/// The current foundation treats the string as Swift statements that should
-/// become the function body. The translation point is intentionally isolated in
-/// the macro implementation so an asm-like DSL parser can replace it later.
-///
-///     @Asm("return 42")
-///     func answer() -> Int
+///     @Asm(
+///         """
+///         add x0, x0, x1
+///         ret
+///         """,
+///         arch: .arm64
+///     )
+///     func add(_ lhs: UInt64, _ rhs: UInt64) -> UInt64
 @attached(body)
-public macro Asm(_ source: String) = #externalMacro(module: "AsmMacroMacros", type: "AsmMacro")
+@attached(peer, names: prefixed(__asm_))
+public macro Asm(
+    _ source: String,
+    arch: AsmArchitecture = .arm64
+) = #externalMacro(module: "AsmMacroMacros", type: "AsmMacro")
