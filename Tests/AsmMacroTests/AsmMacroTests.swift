@@ -155,6 +155,75 @@ final class AsmMacroTests: XCTestCase {
         #endif
     }
 
+    func testAssemblerReportsFailingAsmLine() throws {
+        #if canImport(AsmMacroMacros)
+        XCTAssertThrowsError(
+            try AsmAssembler().assemble(
+                """
+                add x0, x0, x1
+                add x0, z0, x1
+                ret
+                """,
+                architecture: .arm64
+            )
+        ) { error in
+            guard case let AsmMacroDiagnostic.assemblerFailed(failure) = error else {
+                return XCTFail("Expected assemblerFailed diagnostic, got \(error)")
+            }
+
+            XCTAssertEqual(
+                failure.message,
+                "`Assembler` failed for arm64: Invalid register: z0"
+            )
+        }
+        #else
+        throw XCTSkip("macros are only supported when running tests for the host platform")
+        #endif
+    }
+
+    func testAsmMacroReportsFailingAsmLine() throws {
+        #if canImport(AsmMacroMacros)
+        assertMacroExpansion(
+            """
+            @Asm(
+                \"\"\"
+                add x0, x0, x1
+                add x0, z0, x1
+                ret
+                \"\"\",
+                arch: .arm64
+            )
+            func add(_ lhs: UInt64, _ rhs: UInt64) -> UInt64
+            """,
+            expandedSource: """
+              func add(_ lhs: UInt64, _ rhs: UInt64) -> UInt64 {
+                #if arch(arm64)
+                typealias __AsmFn = @convention(c) (UInt64, UInt64) -> UInt64
+                let f = withUnsafePointer(to: &__asm_add) {
+                    unsafeBitCast($0, to: __AsmFn.self)
+                }
+                return f(lhs, rhs)
+                #else
+                #error("@Asm function add was generated for arm64.")
+                #endif
+              }
+              """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "`Assembler` failed for arm64: Invalid register: z0",
+                    line: 4,
+                    column: 5,
+                    severity: .error
+                )
+            ],
+            macros: testMacros,
+            indentationWidth: .spaces(2)
+        )
+        #else
+        throw XCTSkip("macros are only supported when running tests for the host platform")
+        #endif
+    }
+
     func testMakeArm64Word() throws {
         #if canImport(AsmMacroMacros)
         XCTAssertEqual(

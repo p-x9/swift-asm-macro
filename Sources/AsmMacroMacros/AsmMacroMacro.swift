@@ -15,6 +15,7 @@ public struct AsmMacro {}
 
 struct AsmArguments {
     let source: String
+    let sourceLiteral: StringLiteralExprSyntax
     let architecture: AsmArchitecture
 
     static func arguments(
@@ -58,7 +59,8 @@ struct AsmArguments {
         }
 
         return .init(
-            source: source.trimmingCharacters(in: .whitespacesAndNewlines),
+            source: source,
+            sourceLiteral: stringLiteral,
             architecture: architecture
         )
     }
@@ -327,7 +329,17 @@ extension AsmMacro: PeerMacro {
                 architecture: arguments.architecture
             )
         } catch let diagnostic as AsmMacroDiagnostic {
-            context.diagnose(diagnostic.diagnose(at: node))
+            if case let .assemblerFailed(failure) = diagnostic,
+               let anchor = failure.anchor(in: arguments.sourceLiteral) {
+                context.diagnose(
+                    diagnostic.diagnose(
+                        at: anchor.node,
+                        position: anchor.position
+                    )
+                )
+            } else {
+                context.diagnose(diagnostic.diagnose(at: node))
+            }
             return []
         }
 

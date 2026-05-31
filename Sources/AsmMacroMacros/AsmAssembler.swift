@@ -100,7 +100,11 @@ struct AsmAssembler {
                 bytes = try ARM64Assembler.assemble(source)
             } catch {
                 throw AsmMacroDiagnostic.assemblerFailed(
-                    "`Assembler` failed for arm64: \(error)"
+                    AsmAssemblyFailureLocator.locate(
+                        source: source,
+                        architecture: architecture,
+                        error: error
+                    )
                 )
             }
         case .x86_64:

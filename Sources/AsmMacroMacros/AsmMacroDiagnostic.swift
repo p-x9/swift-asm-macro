@@ -9,7 +9,7 @@
 import SwiftDiagnostics
 import SwiftSyntax
 
-public enum AsmMacroDiagnostic: Error {
+enum AsmMacroDiagnostic: Error {
     case missingSource
     case sourceIsNotStatic
     case invalidArchitecture
@@ -23,16 +23,16 @@ public enum AsmMacroDiagnostic: Error {
     case unsupportedReturnType(String)
     case unnamedParameterIsNotSupported
     case unsupportedArchitecture(String)
-    case assemblerFailed(String)
+    case assemblerFailed(AsmAssemblyFailure)
     case invalidAssemblerOutput(String)
 }
 
 extension AsmMacroDiagnostic: DiagnosticMessage {
-    func diagnose(at node: some SyntaxProtocol) -> Diagnostic {
-        Diagnostic(node: Syntax(node), message: self)
+    func diagnose(at node: some SyntaxProtocol, position: AbsolutePosition? = nil) -> Diagnostic {
+        Diagnostic(node: Syntax(node), position: position, message: self)
     }
 
-    public var message: String {
+    var message: String {
         switch self {
         case .missingSource:
             return "`@Asm` requires one static string literal argument."
@@ -60,18 +60,18 @@ extension AsmMacroDiagnostic: DiagnosticMessage {
             return "`@Asm` does not support unnamed parameters."
         case let .unsupportedArchitecture(architecture):
             return "`@Asm` does not currently support \(architecture) assembly."
-        case let .assemblerFailed(message):
-            return message
+        case let .assemblerFailed(failure):
+            return failure.message
         case let .invalidAssemblerOutput(message):
             return message
         }
     }
 
-    public var severity: DiagnosticSeverity {
+    var severity: DiagnosticSeverity {
         .error
     }
 
-    public var diagnosticID: MessageID {
+    var diagnosticID: MessageID {
         MessageID(domain: "Swift", id: "AsmMacro.\(id)")
     }
 
