@@ -14,7 +14,7 @@ The assembly is assembled **at compile time** and embedded into the binary's `__
 ## Features
 
 - Write raw assembly inline as a Swift string literal
-- Assemble to machine code at compile time via [swift-assembler](https://github.com/swiftbin/swift-assembler)
+- Assemble to machine code at compile time via [swift-assembly](https://github.com/swiftbin/swift-assembly)
 - Embed the bytes into `__TEXT,__text` and call them through the C calling convention
 - Compile-time diagnostics for unsupported functions, types, and architectures
 - Currently targets `arm64`
@@ -131,7 +131,7 @@ and add `AsmMacro` to your target's dependencies:
 
 ## Related Projects
 
-- [swift-assembler](https://github.com/swiftbin/swift-assembler) — the assembler backend used to turn assembly source into machine code
+- [swift-assembly](https://github.com/swiftbin/swift-assembly) — the assembler backend used to turn assembly source into machine code
 
 ## License
 
