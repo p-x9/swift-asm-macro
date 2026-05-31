@@ -24,7 +24,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/swiftlang/swift-syntax.git", from: "603.0.0-latest"),
-        .package(url: "https://github.com/swiftbin/swift-assembler.git", branch: "main"),
+        .package(url: "https://github.com/swiftbin/swift-assembly.git", from: "0.1.0"),
     ],
     targets: [
         .macro(
@@ -32,7 +32,7 @@ let package = Package(
             dependencies: [
                 .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
                 .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
-                .product(name: "Assembler", package: "swift-assembler"),
+                .product(name: "Assembly", package: "swift-assembly"),
             ]
         ),
         .target(name: "AsmMacro", dependencies: ["AsmMacroMacros"]),

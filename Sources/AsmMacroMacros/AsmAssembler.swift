@@ -6,7 +6,7 @@
 //
 //
 
-import Assembler
+import Assembly
 import Foundation
 
 enum AsmArchitecture: String {
