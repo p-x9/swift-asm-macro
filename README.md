@@ -45,6 +45,18 @@ The `arch` argument defaults to `.arm64`, so it can be omitted:
 func noop()
 ```
 
+You can also pass one static string literal per instruction. Swift comments can be placed between the arguments as usual:
+
+```swift
+@Asm(
+    "cmp x0, x1", // compare arguments
+    "csel x0, x0, x1, ge",
+    "ret",
+    arch: .arm64
+)
+func max(_ lhs: UInt64, _ rhs: UInt64) -> UInt64
+```
+
 ## How it works
 
 `@Asm` is a combined [peer](https://docs.swift.org/swift-book/documentation/the-swift-programming-language/macros/) and [body](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0415-function-body-macros.md) macro. For a single declaration it generates two things:

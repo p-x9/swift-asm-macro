@@ -103,20 +103,154 @@ final class AsmMacroTests: XCTestCase {
         #endif
     }
 
-    func testAsmMacroRejectsX86_64Function() throws {
+    func testAsmMacroAcceptsMultipleStringLiteralLines() throws {
+        #if canImport(AsmMacroMacros)
+        let storageName = AsmStorageName.make(
+            functionName: "max"
+        )
+
+        assertMacroExpansion(
+            """
+            @Asm(
+                "cmp x0, x1", // compare arguments
+                "csel x0, x0, x1, ge",
+                "ret",
+                arch: .arm64
+            )
+            func max(_ lhs: UInt64, _ rhs: UInt64) -> UInt64
+            """,
+            expandedSource: """
+              func max(_ lhs: UInt64, _ rhs: UInt64) -> UInt64 {
+                #if arch(arm64)
+                typealias __AsmFn = @convention(c) (UInt64, UInt64) -> UInt64
+                let f = withUnsafePointer(to: &\(storageName)) {
+                    unsafeBitCast($0, to: __AsmFn.self)
+                }
+                return f(lhs, rhs)
+                #else
+                #error("@Asm function max was generated for arm64.")
+                #endif
+              }
+
+              #if arch(arm64)
+              @used
+              @section("__TEXT,__text")
+              nonisolated(unsafe) var \(storageName): (UInt32, UInt32, UInt32) = (
+                  0xeb01001f,
+                  0x9a81a000,
+                  0xd65f03c0
+              )
+              #else
+              #error("@Asm storage \(storageName) was generated for arm64.")
+              #endif
+              """,
+            macros: testMacros,
+            indentationWidth: .spaces(2)
+        )
+        #else
+        throw XCTSkip("macros are only supported when running tests for the host platform")
+        #endif
+    }
+
+    func testAsmMacroReportsFailingMultipleStringLiteralLine() throws {
         #if canImport(AsmMacroMacros)
         assertMacroExpansion(
             """
             @Asm(
-                \"\"\"
-                movq %rdi, %rax
-                addq %rsi, %rax
-                retq
-                \"\"\",
-                arch: .x86_64
+                "add x0, x0, x1",
+                "add x0, z0, x1",
+                "ret",
+                arch: .arm64
             )
             func add(_ lhs: UInt64, _ rhs: UInt64) -> UInt64
             """,
+            expandedSource: """
+              func add(_ lhs: UInt64, _ rhs: UInt64) -> UInt64 {
+                #if arch(arm64)
+                typealias __AsmFn = @convention(c) (UInt64, UInt64) -> UInt64
+                let f = withUnsafePointer(to: &__asm_add) {
+                    unsafeBitCast($0, to: __AsmFn.self)
+                }
+                return f(lhs, rhs)
+                #else
+                #error("@Asm function add was generated for arm64.")
+                #endif
+              }
+              """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "`Assembler` failed for arm64: Invalid register: z0",
+                    line: 3,
+                    column: 6,
+                    severity: .error
+                )
+            ],
+            macros: testMacros,
+            indentationWidth: .spaces(2)
+        )
+        #else
+        throw XCTSkip("macros are only supported when running tests for the host platform")
+        #endif
+    }
+
+    func testAsmMacroReportsFailingLineAfterMultilineStringLiteral() throws {
+        #if canImport(AsmMacroMacros)
+        assertMacroExpansion(
+            #"""
+            @Asm(
+                """
+                add x0, x0, x1
+                sub x0, x0, x1
+                """,
+                "add x0, z0, x1",
+                "ret",
+                arch: .arm64
+            )
+            func add(_ lhs: UInt64, _ rhs: UInt64) -> UInt64
+            """#,
+            expandedSource: """
+              func add(_ lhs: UInt64, _ rhs: UInt64) -> UInt64 {
+                #if arch(arm64)
+                typealias __AsmFn = @convention(c) (UInt64, UInt64) -> UInt64
+                let f = withUnsafePointer(to: &__asm_add) {
+                    unsafeBitCast($0, to: __AsmFn.self)
+                }
+                return f(lhs, rhs)
+                #else
+                #error("@Asm function add was generated for arm64.")
+                #endif
+              }
+              """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "`Assembler` failed for arm64: Invalid register: z0",
+                    line: 6,
+                    column: 6,
+                    severity: .error
+                )
+            ],
+            macros: testMacros,
+            indentationWidth: .spaces(2)
+        )
+        #else
+        throw XCTSkip("macros are only supported when running tests for the host platform")
+        #endif
+    }
+
+    func testAsmMacroRejectsX86_64Function() throws {
+        #if canImport(AsmMacroMacros)
+        assertMacroExpansion(
+            #"""
+            @Asm(
+                """
+                movq %rdi, %rax
+                addq %rsi, %rax
+                retq
+                """,
+                arch: .x86_64
+            )
+            func add(_ lhs: UInt64, _ rhs: UInt64) -> UInt64
+            """#,
             expandedSource: """
               func add(_ lhs: UInt64, _ rhs: UInt64) -> UInt64
               """,
