@@ -16,6 +16,6 @@ public enum AsmArchitecture {
 @attached(body)
 @attached(peer, names: prefixed(__asm_))
 public macro Asm(
-    _ source: String,
+    _ source: StaticString...,
     arch: AsmArchitecture = .arm64
 ) = #externalMacro(module: "AsmMacroMacros", type: "AsmMacro")

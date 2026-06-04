@@ -19,12 +19,22 @@ struct AsmAssemblyFailure: Error {
         "`Assembler` failed for \(architecture.rawValue): \(underlyingMessage)"
     }
 
-    func anchor(in literal: StringLiteralExprSyntax) -> AsmDiagnosticAnchor? {
+    func anchor(in literals: [StringLiteralExprSyntax]) -> AsmDiagnosticAnchor? {
         guard let line else {
             return nil
         }
 
-        return AsmSourceMap(literal: literal).anchor(for: line.instructionIndex)
+        var currentInstructionIndex = 0
+        for sourceLiteral in literals {
+            if let anchor = AsmSourceMap(sourceLiteral: sourceLiteral).anchor(
+                for: line.instructionIndex,
+                currentInstructionIndex: &currentInstructionIndex
+            ) {
+                return anchor
+            }
+        }
+
+        return nil
     }
 }
 
@@ -152,15 +162,16 @@ struct AsmSourceText {
 }
 
 struct AsmSourceMap {
-    private let literal: StringLiteralExprSyntax
+    private let sourceLiteral: StringLiteralExprSyntax
 
-    init(literal: StringLiteralExprSyntax) {
-        self.literal = literal
+    init(sourceLiteral: StringLiteralExprSyntax) {
+        self.sourceLiteral = sourceLiteral
     }
 
-    func anchor(for instructionIndex: Int) -> AsmDiagnosticAnchor? {
-        var currentInstructionIndex = 0
-
+    func anchor(
+        for instructionIndex: Int,
+        currentInstructionIndex: inout Int
+    ) -> AsmDiagnosticAnchor? {
         for segment in stringSegments {
             if let anchor = anchor(
                 for: instructionIndex,
@@ -175,7 +186,7 @@ struct AsmSourceMap {
     }
 
     private var stringSegments: [StringSegmentSyntax] {
-        literal.segments.compactMap { segment in
+        sourceLiteral.segments.compactMap { segment in
             guard case let .stringSegment(stringSegment) = segment else {
                 return nil
             }
@@ -201,7 +212,12 @@ struct AsmSourceMap {
             if let instruction = AsmInstructionLine(rawLine).instruction {
                 currentInstructionIndex += 1
                 if currentInstructionIndex == targetInstructionIndex {
-                    return anchor(for: instruction, in: rawLine, content: content, lineStartUTF8Offset: lineStartUTF8Offset)
+                    return anchor(
+                        for: instruction,
+                        in: rawLine,
+                        content: content,
+                        lineStartUTF8Offset: lineStartUTF8Offset
+                    )
                 }
             }
 

@@ -35,7 +35,7 @@ extension AsmMacroDiagnostic: DiagnosticMessage {
     var message: String {
         switch self {
         case .missingSource:
-            return "`@Asm` requires one static string literal argument."
+            return "`@Asm` requires one or more static string literal arguments."
         case .sourceIsNotStatic:
             return "The provided asm source must be static."
         case .invalidArchitecture:

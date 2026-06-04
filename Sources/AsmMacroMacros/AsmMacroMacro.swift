@@ -15,7 +15,7 @@ public struct AsmMacro {}
 
 struct AsmArguments {
     let source: String
-    let sourceLiteral: StringLiteralExprSyntax
+    let sourceLiterals: [StringLiteralExprSyntax]
     let architecture: AsmArchitecture
 
     static func arguments(
@@ -23,8 +23,7 @@ struct AsmArguments {
         context: some MacroExpansionContext,
         diagnose: Bool
     ) -> AsmArguments? {
-        guard case let .argumentList(arguments) = node.arguments,
-              let sourceArgument = arguments.first?.expression
+        guard case let .argumentList(arguments) = node.arguments
         else {
             if diagnose {
                 context.diagnose(AsmMacroDiagnostic.missingSource.diagnose(at: node))
@@ -32,11 +31,29 @@ struct AsmArguments {
             return nil
         }
 
-        guard let stringLiteral = sourceArgument.as(StringLiteralExprSyntax.self),
-              let source = stringLiteral.representedLiteralValue
-        else {
+        var sourceLiterals: [StringLiteralExprSyntax] = []
+        var sources: [String] = []
+        for argument in arguments {
+            guard argument.label == nil else {
+                continue
+            }
+
+            guard let stringLiteral = argument.expression.as(StringLiteralExprSyntax.self),
+                  let source = stringLiteral.representedLiteralValue
+            else {
+                if diagnose {
+                    context.diagnose(AsmMacroDiagnostic.sourceIsNotStatic.diagnose(at: argument.expression))
+                }
+                return nil
+            }
+
+            sourceLiterals.append(stringLiteral)
+            sources.append(source)
+        }
+
+        guard !sourceLiterals.isEmpty else {
             if diagnose {
-                context.diagnose(AsmMacroDiagnostic.sourceIsNotStatic.diagnose(at: sourceArgument))
+                context.diagnose(AsmMacroDiagnostic.missingSource.diagnose(at: node))
             }
             return nil
         }
@@ -59,8 +76,8 @@ struct AsmArguments {
         }
 
         return .init(
-            source: source,
-            sourceLiteral: stringLiteral,
+            source: sources.joined(separator: "\n"),
+            sourceLiterals: sourceLiterals,
             architecture: architecture
         )
     }
@@ -330,7 +347,7 @@ extension AsmMacro: PeerMacro {
             )
         } catch let diagnostic as AsmMacroDiagnostic {
             if case let .assemblerFailed(failure) = diagnostic,
-               let anchor = failure.anchor(in: arguments.sourceLiteral) {
+               let anchor = failure.anchor(in: arguments.sourceLiterals) {
                 context.diagnose(
                     diagnostic.diagnose(
                         at: anchor.node,
